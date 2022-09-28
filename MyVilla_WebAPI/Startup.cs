@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Serilog;
+using MyVilla_WebAPI.Logging;
 
 namespace MyVilla_WebAPI
 {
@@ -23,11 +25,21 @@ namespace MyVilla_WebAPI
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
+
+        //public static IHostBuilder CreateHostBuilder(string[] args) =>
+        //    Host.CreateDefaultBuilder(args)
+        //    .UseSerilog();
+
         public void ConfigureServices(IServiceCollection services)
         {
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().
+                WriteTo.File("log/villaLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
+
             services.AddControllers( option => {
                     option.ReturnHttpNotAcceptable = true;
                 }).AddNewtonsoftJson().AddXmlDataContractSerializerFormatters();
+
+            services.AddSingleton<ILogging, LoggingV2>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

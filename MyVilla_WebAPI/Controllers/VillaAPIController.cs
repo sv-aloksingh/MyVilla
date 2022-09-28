@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using MyVilla_WebAPI.Data;
+using MyVilla_WebAPI.Logging;
 using MyVilla_WebAPI.Models.Dto;
 using System;
 using System.Collections.Generic;
@@ -15,10 +17,24 @@ namespace MyVilla_WebAPI.Controllers
     [ApiController]
     public class VillaAPIController : ControllerBase
     {
+        private readonly ILogger<VillaAPIController> _logger;
+        private readonly ILogging _logging;
+
+        //Custom logger 
+
+        public VillaAPIController(ILogger<VillaAPIController> logger
+            , ILogging logging)
+        {
+            _logger = logger;
+            _logging = logging;
+        }
+
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<IEnumerable<VillaDTO>> GetVillas()
         {
+            _logger.LogInformation("Getting all villas");
+            _logging.Log("Getting all villas -Alok", "error"); //log info , just used error for color check.
             return Ok(VillaStore.villaList);
         }
 
@@ -28,10 +44,14 @@ namespace MyVilla_WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<VillaDTO> GetVillas(int id)
+        public ActionResult<VillaDTO> GetVilla(int id)
         {
             if (id <= 0)
+            {
+                _logger.LogError("Get Villa Error With Id" + id);
+                _logging.Log("Get Villa Error With Alok Id" + id, "error");
                 return BadRequest();
+            }
             var villa = new VillaDTO();
             if (VillaStore.villaList.Any())
                 villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
