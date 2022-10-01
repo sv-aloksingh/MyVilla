@@ -12,6 +12,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Serilog;
 using MyVilla_WebAPI.Logging;
+using MyVilla_WebAPI.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace MyVilla_WebAPI
 {
@@ -32,6 +34,10 @@ namespace MyVilla_WebAPI
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<ApplicationDbContext>(option => {
+                option.UseSqlServer(Configuration.GetConnectionString("DefaultSQLConnection"));
+            });
+
             Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().
                 WriteTo.File("log/villaLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
 

@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MyVilla_WebAPI.Data;
 using MyVilla_WebAPI.Logging;
+using MyVilla_WebAPI.Models;
 using MyVilla_WebAPI.Models.Dto;
 using System;
 using System.Collections.Generic;
@@ -19,14 +21,17 @@ namespace MyVilla_WebAPI.Controllers
     {
         private readonly ILogger<VillaAPIController> _logger;
         private readonly ILogging _logging;
+        private readonly ApplicationDbContext _dbContext;
 
         //Custom logger 
 
         public VillaAPIController(ILogger<VillaAPIController> logger
-            , ILogging logging)
+            , ILogging logging
+            , ApplicationDbContext dbContext)
         {
             _logger = logger;
             _logging = logging;
+            _dbContext = dbContext;
         }
 
         [HttpGet]
@@ -35,7 +40,7 @@ namespace MyVilla_WebAPI.Controllers
         {
             _logger.LogInformation("Getting all villas");
             _logging.Log("Getting all villas -Alok", "error"); //log info , just used error for color check.
-            return Ok(VillaStore.villaList);
+            return Ok(_dbContext.Villas.ToList());
         }
 
         //[HttpGet("{id:int}")]
@@ -52,9 +57,7 @@ namespace MyVilla_WebAPI.Controllers
                 _logging.Log("Get Villa Error With Alok Id" + id, "error");
                 return BadRequest();
             }
-            var villa = new VillaDTO();
-            if (VillaStore.villaList.Any())
-                villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
+            var villa = _dbContext.Villas.FirstOrDefault(x => x.Id == id);
             if (villa == null)
                 return NotFound();
             return Ok(villa);
@@ -69,7 +72,7 @@ namespace MyVilla_WebAPI.Controllers
             //if (!ModelState.IsValid)   ApiController attribute take care validation from DataAnnotations so removed this
             //    return BadRequest();
             //Create Villa only if Name is unique else give custom error.
-            if (VillaStore.villaList.FirstOrDefault(x => x.Name.ToLower() == villa.Name.ToLower()) != null)
+            if (_dbContext.Villas.FirstOrDefault(x => x.Name.ToLower() == villa.Name.ToLower()) != null)
             {
                 ModelState.AddModelError("CustomError","Villa already Exists!");
                 return BadRequest(ModelState);
@@ -78,8 +81,19 @@ namespace MyVilla_WebAPI.Controllers
                 return BadRequest();
             if (villa.Id > 0)
                 return StatusCode(StatusCodes.Status500InternalServerError);
-            villa.Id = VillaStore.villaList.OrderByDescending(x => x.Id).FirstOrDefault().Id + 1;
-            VillaStore.villaList.Add(villa);
+            villa.Id = _dbContext.Villas.OrderByDescending(x => x.Id).FirstOrDefault().Id + 1;
+            var model = new Villa()
+            {
+                Name = villa.Name,
+                Rate = villa.Rate,
+                Sqft = villa.Sqft,
+                Occupancy = villa.Occupancy,
+                Details = villa.Details,
+                ImageUrl = villa.ImageUrl,
+                Amenity = villa.Amenity
+            };
+            _dbContext.Villas.Add(model);
+            _dbContext.SaveChanges();
             return CreatedAtRoute("GetVilla",new { id = villa.Id},villa);
         }
 
@@ -89,12 +103,13 @@ namespace MyVilla_WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult DeleteVilla(int id)
         {
-            var villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
+            var villa = _dbContext.Villas.FirstOrDefault(x => x.Id == id);
             if (id <= 0)
                 return BadRequest();
             if (villa == null)
                 return NotFound();
-            VillaStore.villaList.Remove(villa);
+            _dbContext.Villas.Remove(villa);
+            _dbContext.SaveChanges();
             return NoContent();
         }
 
@@ -106,13 +121,15 @@ namespace MyVilla_WebAPI.Controllers
         {
             if (villa == null || (id != villa.Id))
                 return BadRequest();
-            var villas = VillaStore.villaList.FirstOrDefault(x=>x.Id == villa.Id);
+            var villas = _dbContext.Villas.FirstOrDefault(x=>x.Id == villa.Id);
             if (villas == null)
                 return NotFound();
             villas.Id = villa.Id;
             villas.Name = villa.Name;
             villas.Sqft = villa.Sqft;
             villas.Occupancy = villa.Occupancy;
+            _dbContext.Update(villas);
+            _dbContext.SaveChanges();
             return NoContent();
         }
 
@@ -124,11 +141,38 @@ namespace MyVilla_WebAPI.Controllers
         {
             if (patchDTO == null || id == 0)
                 return BadRequest();
-            var villa = VillaStore.villaList.FirstOrDefault(x => x.Id == id);
+            var villa = _dbContext.Villas.AsNoTracking().FirstOrDefault(x => x.Id == id);
             if (villa == null)
                 return NotFound();
 
-            patchDTO.ApplyTo(villa, ModelState);
+            VillaDTO villasDTO = new VillaDTO()
+            {
+                Id = villa.Id,
+                Name = villa.Name,
+                Rate = villa.Rate,
+                Sqft = villa.Sqft,
+                Occupancy = villa.Occupancy,
+                Details = villa.Details,
+                ImageUrl = villa.ImageUrl,
+                Amenity = villa.Amenity
+            };
+
+            patchDTO.ApplyTo(villasDTO, ModelState);
+
+            Villa villas = new Villa
+            {
+                Id = villasDTO.Id,
+                Name = villasDTO.Name,
+                Rate = villasDTO.Rate,
+                Sqft = villasDTO.Sqft,
+                Occupancy = villasDTO.Occupancy,
+                Details = villasDTO.Details,
+                ImageUrl = villasDTO.ImageUrl,
+                Amenity = villasDTO.Amenity
+            };
+
+            _dbContext.Update(villas);
+            _dbContext.SaveChanges();
             if (!ModelState.IsValid)
                 return BadRequest();
 
