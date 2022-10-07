@@ -8,6 +8,7 @@ using MyVilla_WebAPI.Data;
 using MyVilla_WebAPI.Logging;
 using MyVilla_WebAPI.Models;
 using MyVilla_WebAPI.Models.Dto;
+using MyVilla_WebAPI.Repository.IRepository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,20 +23,23 @@ namespace MyVilla_WebAPI.Controllers
     {
         private readonly ILogger<VillaAPIController> _logger;
         private readonly ILogging _logging;
-        private readonly ApplicationDbContext _dbContext;
         private readonly IMapper _mapper;
+        private readonly IVillaRepository _villaRepository;
+        //private readonly ApplicationDbContext _dbContext;
+
 
         //Custom logger 
 
         public VillaAPIController(ILogger<VillaAPIController> logger
             , ILogging logging
             , IMapper mapper
-            , ApplicationDbContext dbContext)
+            , IVillaRepository villaRepository)
         {
             _logger = logger;
             _logging = logging;
             _mapper = mapper;
-            _dbContext = dbContext;
+            _villaRepository = villaRepository;
+            //_dbContext = dbContext;
         }
 
         [HttpGet]
@@ -45,7 +49,7 @@ namespace MyVilla_WebAPI.Controllers
             _logger.LogInformation("Getting all villas");
             _logging.Log("Getting all villas -Alok", "error"); //log info , just used error for color check.
 
-            IEnumerable<Villa> villaList = await _dbContext.Villas.ToListAsync();
+            IEnumerable<Villa> villaList = await _villaRepository.GetAllVillaAsync();
             return Ok(_mapper.Map<IEnumerable<VillaDTO>>(villaList));
         }
 
@@ -63,7 +67,7 @@ namespace MyVilla_WebAPI.Controllers
                 _logging.Log("Get Villa Error With Alok Id" + id, "error");
                 return BadRequest();
             }
-            var villa = await _dbContext.Villas.FirstOrDefaultAsync(x => x.Id == id);
+            var villa = await _villaRepository.GetVillaAsync(x => x.Id == id);
             if (villa == null)
                 return NotFound();
             return Ok(_mapper.Map<VillaDTO>(villa));
@@ -78,7 +82,7 @@ namespace MyVilla_WebAPI.Controllers
             //if (!ModelState.IsValid)   ApiController attribute take care validation from DataAnnotations so removed this
             //    return BadRequest();
             //Create Villa only if Name is unique else give custom error.
-            if (await _dbContext.Villas.FirstOrDefaultAsync(x => x.Name.ToLower() == createDTO.Name.ToLower()) != null)
+            if (await _villaRepository.GetVillaAsync(x => x.Name.ToLower() == createDTO.Name.ToLower()) != null)
             {
                 ModelState.AddModelError("CustomError","Villa already Exists!");
                 return BadRequest(ModelState);
@@ -99,8 +103,7 @@ namespace MyVilla_WebAPI.Controllers
             //    ImageUrl = villa.ImageUrl,
             //    Amenity = villa.Amenity
             //};
-            await _dbContext.Villas.AddAsync(model);
-            await _dbContext.SaveChangesAsync();
+            await _villaRepository.CreateVillaAsync(model);
             return CreatedAtRoute("GetVilla",new { id = model.Id},model);
         }
 
@@ -110,13 +113,12 @@ namespace MyVilla_WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteVilla(int id)
         {
-            var villa = await _dbContext.Villas.FirstOrDefaultAsync(x => x.Id == id);
+            var villa = await _villaRepository.GetVillaAsync(x => x.Id == id);
             if (id <= 0)
                 return BadRequest();
             if (villa == null)
                 return NotFound();
-            _dbContext.Villas.Remove(villa);
-            await _dbContext.SaveChangesAsync();
+            await _villaRepository.RemoveVillaAsync(villa);
             return NoContent();
         }
 
@@ -134,8 +136,7 @@ namespace MyVilla_WebAPI.Controllers
             //villas.Name = updateDTO.Name;
             //villas.Sqft = updateDTO.Sqft;
             //villas.Occupancy = updateDTO.Occupancy;
-            _dbContext.Update(model);
-            await _dbContext.SaveChangesAsync();
+            await _villaRepository.UpdateVillaAsync(model);
             return NoContent();
         }
 
@@ -147,7 +148,7 @@ namespace MyVilla_WebAPI.Controllers
         {
             if (patchDTO == null || id == 0)
                 return BadRequest();
-            var villa = await _dbContext.Villas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            var villa = await _villaRepository.GetVillaAsync(x => x.Id == id, isTracked: false);
             if (villa == null)
                 return NotFound();
 
@@ -179,8 +180,7 @@ namespace MyVilla_WebAPI.Controllers
             //    Amenity = villasDTO.Amenity
             //};
 
-            _dbContext.Update(villas);
-            await _dbContext.SaveChangesAsync();
+            await _villaRepository.UpdateVillaAsync(villas);
             if (!ModelState.IsValid)
                 return BadRequest();
 

@@ -14,6 +14,8 @@ using Serilog;
 using MyVilla_WebAPI.Logging;
 using MyVilla_WebAPI.Data;
 using Microsoft.EntityFrameworkCore;
+using MyVilla_WebAPI.Repository.IRepository;
+using MyVilla_WebAPI.Repository;
 
 namespace MyVilla_WebAPI
 {
@@ -41,6 +43,7 @@ namespace MyVilla_WebAPI
             Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().
                 WriteTo.File("log/villaLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
 
+            services.AddScoped<IVillaRepository, VillaRepository>();
             services.AddAutoMapper(typeof(MappingConfig));
 
             services.AddControllers( option => {
