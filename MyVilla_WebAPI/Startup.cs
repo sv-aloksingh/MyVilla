@@ -16,6 +16,8 @@ using MyVilla_WebAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using MyVilla_WebAPI.Repository.IRepository;
 using MyVilla_WebAPI.Repository;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc.Formatters;
 
 namespace MyVilla_WebAPI
 {
@@ -36,21 +38,50 @@ namespace MyVilla_WebAPI
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<ApplicationDbContext>(option => {
-                option.UseSqlServer(Configuration.GetConnectionString("DefaultSQLConnection"));
-            });
-
-            Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().
-                WriteTo.File("log/villaLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
-
-            services.AddScoped<IVillaRepository, VillaRepository>();
-            services.AddAutoMapper(typeof(MappingConfig));
-
             services.AddControllers( option => {
                     option.ReturnHttpNotAcceptable = true;
                 }).AddNewtonsoftJson().AddXmlDataContractSerializerFormatters();
 
+            //Swagger config
+            services.AddSwaggerGen();
+            services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Version = "v1",
+                    Title = "Swagger API",
+                    Description = "An ASP.NET Core Web API for managing ToDo items",
+                    TermsOfService = new Uri("https://example.com/terms"),
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Example Contact",
+                        Url = new Uri("https://example.com/contact")
+                    },
+                    License = new OpenApiLicense
+                    {
+                        Name = "Example License",
+                        Url = new Uri("https://example.com/license")
+                    }
+                });
+            });
+
+            services.AddDbContext<ApplicationDbContext>(option => {
+                option.UseSqlServer(Configuration.GetConnectionString("DefaultSQLConnection"));
+            });
+
+            //repository injection 
+            services.AddScoped<IVillaRepository, VillaRepository>();
+            services.AddScoped<IVillaNumberRepository, VillaNumberRepository>();
+
+            //Automapper configuration
+            services.AddAutoMapper(typeof(MappingConfig));
+
+            //Logging configuration
             services.AddSingleton<ILogging, LoggingV2>();
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().
+                WriteTo.File("log/villaLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
+
+            services.AddControllers(options => options.OutputFormatters.RemoveType<StringOutputFormatter>());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -59,7 +90,20 @@ namespace MyVilla_WebAPI
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI();
             }
+
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+                options.RoutePrefix = string.Empty;
+            });
+
+            app.UseSwagger(options =>
+            {
+                options.SerializeAsV2 = true;
+            });
 
             app.UseHttpsRedirection();
 
