@@ -149,7 +149,7 @@ namespace MyVilla_WebAPI.Controllers
             return _response;
         }
 
-        [HttpDelete("id", Name = "DeleteVilla")]
+        [HttpDelete("{id:int}", Name = "DeleteVilla")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
