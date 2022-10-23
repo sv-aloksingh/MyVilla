@@ -28,9 +28,12 @@ namespace MyVilla_Web
             //Automapper configuration
             services.AddAutoMapper(typeof(MappingConfig));
 
-            //Register client and service for DI
+            //Register client and service for DI VIllaService
             services.AddHttpClient<IVillaService, VillaService>();
             services.AddScoped<IVillaService, VillaService>();
+            //Register client and service for DI VillaNumberService
+            services.AddHttpClient<IVillaNumberService, VillaNumberService>();
+            services.AddScoped<IVillaNumberService, VillaNumberService>();
 
             services.AddControllersWithViews();
         }

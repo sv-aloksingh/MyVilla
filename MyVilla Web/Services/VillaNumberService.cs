@@ -66,7 +66,7 @@ namespace MyVilla_Web.Services
             { 
                 ApiType = SD.ApiType.PUT,
                 Data = villaNumberUpdateDTO,
-                Url = villaNumberUpdateDTO + "/api/VillaAPI/" + villaNumberUpdateDTO.VillaID
+                Url = villaNumberUrl + "/api/VillaNumberAPI/" + villaNumberUpdateDTO.VillaNo
             });
         }
     }

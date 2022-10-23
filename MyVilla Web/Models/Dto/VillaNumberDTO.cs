@@ -8,10 +8,11 @@ namespace MyVilla_Web.Models.Dto
 {
     public class VillaNumberDTO
     {
-        [Required]
+        [Required]  
         public int VillaNo { get; set; }
         [Required]
         public int VillaID { get; set; }
         public string SpecialDetails { get; set; }
+        public VillaDTO Villa { get; set; }
     }
 }

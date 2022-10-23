@@ -1,6 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using MyVilla_Web.Models;
+using MyVilla_Web.Models.Dto;
+using MyVilla_Web.Models.VM;
 using MyVilla_Web.Services.IServices;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,16 +17,168 @@ namespace MyVilla_Web.Controllers
     {
         private readonly IVillaNumberService _villaNumberService;
         private readonly IMapper _mapper;
+        private readonly IVillaService _villaService;
 
         public VillaNumberController(IVillaNumberService villaNumberService,
-            IMapper mapper)
+            IMapper mapper,
+            IVillaService villaService)
         {
             _villaNumberService = villaNumberService;
             _mapper = mapper;
+            _villaService = villaService;
         }
-        public IActionResult IndexVillaNumber()
+        public async Task<IActionResult> IndexVillaNumber()
         {
-            return View();
+            List<VillaNumberDTO> villaNumberDTOList = new List<VillaNumberDTO>();
+            var model = await _villaNumberService.GetAllAsync<APIResponse>();
+            if (model != null && model.IsSuccess)
+            {
+                villaNumberDTOList = JsonConvert.DeserializeObject<List<VillaNumberDTO>>(Convert.ToString(model.Result));
+            }
+            return View(villaNumberDTOList);
+        }
+
+        public async Task<IActionResult> CreateVillaNumber()
+        {
+            VillaNumberCreateVM villaNumberVM = new VillaNumberCreateVM();
+            var model = await _villaService.GetAllAsync<APIResponse>();
+            if (model != null && model.IsSuccess)
+            {
+                villaNumberVM.VillaList = JsonConvert.DeserializeObject<List<VillaDTO>>
+                    (Convert.ToString(model.Result)).Select(i=> new SelectListItem 
+                    { 
+                        Text = i.Name,
+                        Value = i.Id.ToString()
+                    });
+            }
+            return View(villaNumberVM);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateVillaNumber(VillaNumberCreateVM model)
+        {
+            if (ModelState.IsValid)
+            {
+                var response = await _villaNumberService.CreateAsync<APIResponse>(model.VillaNumber);
+                if (response != null && response.IsSuccess)
+                {
+                    return RedirectToAction(nameof(IndexVillaNumber));
+                }
+                else
+                {
+                    if (response.ErrorMessage.Count > 0)
+                    {
+                        ModelState.AddModelError("ErrorMessage", response.ErrorMessage.FirstOrDefault());
+                    }
+                }
+            }
+
+            var resp = await _villaService.GetAllAsync<APIResponse>();
+            if (resp != null && resp.IsSuccess)
+            {
+                model.VillaList = JsonConvert.DeserializeObject<List<VillaDTO>>
+                    (Convert.ToString(resp.Result)).Select(i => new SelectListItem
+                    {
+                        Text = i.Name,
+                        Value = i.Id.ToString()
+                    });
+            }
+            return View(model);
+        }
+
+        public async Task<IActionResult> UpdateVillaNumber(int villaNo)
+        {
+            VillaNumberUpdateVM villaNumberVM = new VillaNumberUpdateVM();
+            var response = await _villaNumberService.GetAsync<APIResponse>(villaNo);
+            if (response != null && response.IsSuccess)
+            {
+                var model = JsonConvert.DeserializeObject<VillaNumberDTO>(Convert.ToString(response.Result));
+                villaNumberVM.VillaNumber = _mapper.Map<VillaNumberUpdateDTO>(model);
+            }
+
+            response = await _villaService.GetAllAsync<APIResponse>();
+            if (response != null && response.IsSuccess)
+            {
+                villaNumberVM.VillaList = JsonConvert.DeserializeObject<List<VillaDTO>>
+                    (Convert.ToString(response.Result)).Select(i => new SelectListItem
+                    {
+                        Text = i.Name,
+                        Value = i.Id.ToString()
+                    });
+                return View(villaNumberVM);
+            }
+
+            return NotFound();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateVillaNumber(VillaNumberUpdateVM model)
+        {
+            if (ModelState.IsValid)
+            {
+                var response = await _villaNumberService.UpdateAsync<APIResponse>(model.VillaNumber);
+                if (response != null && response.IsSuccess)
+                {
+                    return RedirectToAction(nameof(IndexVillaNumber));
+                }
+                else
+                {
+                    if (response.ErrorMessage.Count > 0)
+                    {
+                        ModelState.AddModelError("ErrorMessage", response.ErrorMessage.FirstOrDefault());
+                    }
+                }
+            }
+
+            var resp = await _villaService.GetAllAsync<APIResponse>();
+            if (resp != null && resp.IsSuccess)
+            {
+                model.VillaList = JsonConvert.DeserializeObject<List<VillaDTO>>
+                    (Convert.ToString(resp.Result)).Select(i => new SelectListItem
+                    {
+                        Text = i.Name,
+                        Value = i.Id.ToString()
+                    });
+            }
+            return View(model);
+        }
+
+        public async Task<IActionResult> DeleteVillaNumber(int villaNo)
+        {
+            VillaNumberDeleteVM villaNumberVM = new VillaNumberDeleteVM();
+            var response = await _villaNumberService.GetAsync<APIResponse>(villaNo);
+            if (response != null && response.IsSuccess)
+            {
+                var model = JsonConvert.DeserializeObject<VillaNumberDTO>(Convert.ToString(response.Result));
+                villaNumberVM.VillaNumber = model;
+            }
+
+            response = await _villaService.GetAllAsync<APIResponse>();
+            if (response != null && response.IsSuccess)
+            {
+                villaNumberVM.VillaList = JsonConvert.DeserializeObject<List<VillaDTO>>
+                    (Convert.ToString(response.Result)).Select(i => new SelectListItem
+                    {
+                        Text = i.Name,
+                        Value = i.Id.ToString()
+                    });
+                return View(villaNumberVM);
+            }
+            return NotFound();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteVillaNumber(VillaNumberDeleteVM model)
+        {
+            var response = await _villaNumberService.DeleteAsync<APIResponse>(model.VillaNumber.VillaNo);
+            if (response != null && response.IsSuccess)
+            {
+                return RedirectToAction(nameof(IndexVillaNumber));
+            }
+            return View(model);
         }
     }
 }

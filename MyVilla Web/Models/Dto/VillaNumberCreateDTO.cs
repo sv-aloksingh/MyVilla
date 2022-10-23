@@ -13,5 +13,6 @@ namespace MyVilla_Web.Models.Dto
         [Required]
         public int VillaID { get; set; }
         public string SpecialDetails { get; set; }
+        public List<VillaDTO> Villas { get; set; }
     }
 }

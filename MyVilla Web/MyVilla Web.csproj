@@ -15,4 +15,8 @@
     <ProjectReference Include="..\MyVilla_Utility\MyVilla_Utility.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\images\" />
+  </ItemGroup>
+
 </Project>

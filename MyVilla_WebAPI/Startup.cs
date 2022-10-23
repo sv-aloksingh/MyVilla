@@ -18,6 +18,12 @@ using MyVilla_WebAPI.Repository.IRepository;
 using MyVilla_WebAPI.Repository;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace MyVilla_WebAPI
 {
@@ -42,10 +48,47 @@ namespace MyVilla_WebAPI
                     option.ReturnHttpNotAcceptable = true;
                 }).AddNewtonsoftJson().AddXmlDataContractSerializerFormatters();
 
+            services.AddControllers()
+                .AddNewtonsoftJson(options =>
+                {
+                    // Use the default property (Pascal) casing
+                    options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                    options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                });
+
             //Swagger config
-            services.AddSwaggerGen();
+            //services.AddSwaggerGen();
             services.AddSwaggerGen(options =>
             {
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = 
+                        "JWT Authorization header using bearer scheme. \r\n \r\n" +
+                        "Enter 'Bearer' [space] then your token in text input below. \r\n \r\n" +
+                        "Example: \"Bearer 1234jhahaaj\"",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Scheme = "Bearer"
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement() 
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                                        {
+                                            Type = ReferenceType.SecurityScheme,
+                                            Id = "Bearer"
+                                        },
+                            Scheme = "oauth2",
+                            Name = "Bearer",
+                            In = ParameterLocation.Header
+                        },
+                        new List<string>()
+                    }
+                });
+
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Version = "v1",
@@ -65,11 +108,14 @@ namespace MyVilla_WebAPI
                 });
             });
 
+
+
             services.AddDbContext<ApplicationDbContext>(option => {
                 option.UseSqlServer(Configuration.GetConnectionString("DefaultSQLConnection"));
             });
 
             //repository injection 
+            services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IVillaRepository, VillaRepository>();
             services.AddScoped<IVillaNumberRepository, VillaNumberRepository>();
 
@@ -80,6 +126,26 @@ namespace MyVilla_WebAPI
             services.AddSingleton<ILogging, LoggingV2>();
             Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().
                 WriteTo.File("log/villaLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
+
+
+            //Add auth config 
+            var key = Configuration.GetValue<string>("ApiSettings:Secret");
+            services.AddAuthentication(x =>
+                {
+                    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                }).AddJwtBearer( x=>
+                {
+                    x.RequireHttpsMetadata = false;
+                    x.SaveToken = true;
+                    x.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)),
+                        ValidateIssuer = false,
+                        ValidateAudience = false
+                    };
+                });
 
             services.AddControllers(options => options.OutputFormatters.RemoveType<StringOutputFormatter>());
         }
@@ -108,6 +174,8 @@ namespace MyVilla_WebAPI
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 

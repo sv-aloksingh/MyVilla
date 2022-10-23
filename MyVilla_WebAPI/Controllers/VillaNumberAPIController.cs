@@ -41,7 +41,7 @@ namespace MyVilla_WebAPI.Controllers
         {
             try
             {
-                var villaNo = await _villaNumberRepository.GetAllVillaAsync();
+                var villaNo = await _villaNumberRepository.GetAllVillaAsync(includeProperties:"Villa");
                 if (villaNo == null)
                     return NoContent();
                 var response = _mapper.Map<IEnumerable<VillaNumberDTO>>(villaNo);
@@ -72,7 +72,7 @@ namespace MyVilla_WebAPI.Controllers
                     _response.StatusCode = HttpStatusCode.NotFound;
                     return BadRequest(_response);
                 }
-                var villa = await _villaNumberRepository.GetAllVillaAsync(x => x.VillaNo == id);
+                var villa = await _villaNumberRepository.GetAllVillaAsync(x => x.VillaNo == id, includeProperties:"Villa");
                 if (villa.Count == 0)
                 {
                     _response.StatusCode = HttpStatusCode.NotFound;
