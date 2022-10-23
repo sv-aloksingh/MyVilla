@@ -10,11 +10,11 @@ namespace MyVilla_Web.Models
     {
         public APIResponse()
         {
-            ErrorMessage = new List<string>();
+            ErrorMessages = new List<string>();
         }
         public HttpStatusCode StatusCode { get; set; }
         public bool IsSuccess { get; set; } = true;
-        public List<string> ErrorMessage { get; set; }
+        public List<string> ErrorMessages { get; set; }
         public object Result { get; set; }
     }
 }

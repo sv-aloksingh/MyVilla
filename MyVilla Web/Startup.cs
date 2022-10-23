@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +36,31 @@ namespace MyVilla_Web
             //Register client and service for DI VillaNumberService
             services.AddHttpClient<IVillaNumberService, VillaNumberService>();
             services.AddScoped<IVillaNumberService, VillaNumberService>();
+            //Register authService
+            services.AddHttpClient<IAuthService, AuthService>();
+            services.AddScoped<IAuthService, AuthService>();
+            //IHttpContextAccessor 
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            //Set Session and Cache 
+            services.AddDistributedMemoryCache();
+
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.Cookie.HttpOnly = true;
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                    options.LoginPath = "/Auth/Login";
+                    options.AccessDeniedPath = "/Auth/AccessDenied";
+                    options.SlidingExpiration = true;
+                });
+
+            services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(10);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
 
             services.AddControllersWithViews();
         }
@@ -52,11 +79,16 @@ namespace MyVilla_Web
                 app.UseHsts();
             }
             app.UseHttpsRedirection();
+
             app.UseStaticFiles();
 
             app.UseRouting();
 
+            app.UseAuthentication();
+
             app.UseAuthorization();
+
+            app.UseSession();
 
             app.UseEndpoints(endpoints =>
             {

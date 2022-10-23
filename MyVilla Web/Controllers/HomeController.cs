@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using MyVilla_Utility;
 using MyVilla_Web.Models;
 using MyVilla_Web.Models.Dto;
 using MyVilla_Web.Services.IServices;
@@ -31,7 +33,7 @@ namespace MyVilla_Web.Controllers
         public async Task<IActionResult> Index()
         {
             var villaList = new List<VillaDTO>();
-            var response = await _villaService.GetAllAsync<APIResponse>();
+            var response = await _villaService.GetAllAsync<APIResponse>(HttpContext.Session.GetString(SD.SessionToken));
             if (response != null && response.IsSuccess)
             {
                 villaList = JsonConvert.DeserializeObject<List<VillaDTO>>(Convert.ToString(response.Result));

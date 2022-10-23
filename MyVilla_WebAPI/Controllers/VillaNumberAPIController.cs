@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -96,6 +97,7 @@ namespace MyVilla_WebAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status201Created)]
@@ -109,12 +111,12 @@ namespace MyVilla_WebAPI.Controllers
                 var eleExist = await _villaNumberRepository.GetAllVillaAsync(x => x.VillaNo == villaNumberCreateDTO.VillaNo);
                 if (exist.Any() && eleExist.Any())
                 {
-                    ModelState.AddModelError("CustomError", "Villa number already exist.");
+                    ModelState.AddModelError("ErrorMessages", "Villa number already exist.");
                     return BadRequest(ModelState);
                 }
                 if ((await _villaRepository.GetAllVillaAsync(x=>x.Id == villaNumberCreateDTO.VillaID)) == null)
                 {
-                    ModelState.AddModelError("CustomError", "Villa Id is invalid.");
+                    ModelState.AddModelError("ErrorMessages", "Villa Id is invalid.");
                     return BadRequest(ModelState);
                 }
 
@@ -135,6 +137,7 @@ namespace MyVilla_WebAPI.Controllers
 
 
         [HttpPut("{id:int}", Name = "UpdateVillaNumber")]
+        [Authorize(Roles = "admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<APIResponse>> UpdateVillaNumber(int Id,[FromBody]VillaNumberUpdateDTO villaNumberUpdateDTO)
@@ -145,7 +148,7 @@ namespace MyVilla_WebAPI.Controllers
                     return BadRequest();
                 if ((await _villaRepository.GetAllVillaAsync(x => x.Id == villaNumberUpdateDTO.VillaID)) == null)
                 {
-                    ModelState.AddModelError("CustomError", "Villa Id is invalid.");
+                    ModelState.AddModelError("ErrorMessages", "Villa Id is invalid.");
                     return BadRequest(ModelState);
                 }
                 var response = _mapper.Map<VillaNumber>(villaNumberUpdateDTO);
@@ -157,13 +160,14 @@ namespace MyVilla_WebAPI.Controllers
             catch (Exception ex)
             {
                 _response.IsSuccess = false;
-                _response.ErrorMessage =
+                _response.ErrorMessages =
                     new List<string>() { ex.ToString()};
             }
             return _response;
         }
 
         [HttpDelete("{id}",Name = "DeleteVillaNumber")]
+        [Authorize(Roles = "admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<APIResponse>> DeleteVillaNumber(int id)

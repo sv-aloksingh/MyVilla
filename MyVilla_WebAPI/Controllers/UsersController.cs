@@ -31,7 +31,7 @@ namespace MyVilla_WebAPI.Controllers
             {
                 _apiResponse.StatusCode = HttpStatusCode.BadRequest;
                 _apiResponse.IsSuccess = false;
-                _apiResponse.ErrorMessage.Add("Username or password is incorrect.");
+                _apiResponse.ErrorMessages.Add("Username or password is incorrect.");
                 return BadRequest(_apiResponse);
             }
             _apiResponse.StatusCode = HttpStatusCode.OK;
@@ -48,7 +48,7 @@ namespace MyVilla_WebAPI.Controllers
             {
                 _apiResponse.StatusCode = HttpStatusCode.BadRequest;
                 _apiResponse.IsSuccess = false;
-                _apiResponse.ErrorMessage = new List<string>() { "Username already exists." };
+                _apiResponse.ErrorMessages = new List<string>() { "Username already exists." };
                 return BadRequest(_apiResponse);
             }
             var user = _userRepository.Register(model);
@@ -56,7 +56,7 @@ namespace MyVilla_WebAPI.Controllers
             {
                 _apiResponse.StatusCode = HttpStatusCode.BadRequest;
                 _apiResponse.IsSuccess = false;
-                _apiResponse.ErrorMessage.Add("Error while registering.");
+                _apiResponse.ErrorMessages.Add("Error while registering.");
                 return BadRequest(_apiResponse);
             }
 

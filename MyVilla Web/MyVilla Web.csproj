@@ -6,13 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper.Data" Version="6.0.0" />
+    <!--<PackageReference Include="AutoMapper.Data" Version="6.0.0" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />-->
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MyVilla_Utility\MyVilla_Utility.csproj" />
+    <ProjectReference Include="..\MyVilla_WebAPI\MyVilla_WebAPI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -4,7 +4,9 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace MyVilla_Web.Services
@@ -50,16 +52,41 @@ namespace MyVilla_Web.Services
                 }
 
                 HttpResponseMessage apiResponse = null;
+
+                if ( !string.IsNullOrEmpty(apiRequest.Token))
+                {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiRequest.Token);
+                }
+
                 apiResponse = await client.SendAsync(message);
                 var apiContent = await apiResponse.Content.ReadAsStringAsync();
-                var APIResponse = JsonConvert.DeserializeObject<T>(apiContent);
-                return APIResponse;
+
+                try
+                {
+                    APIResponse apiResponses = JsonConvert.DeserializeObject<APIResponse>(apiContent);
+                    if (apiResponse.StatusCode == HttpStatusCode.BadRequest 
+                        || apiResponse.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        apiResponses.StatusCode = HttpStatusCode.BadRequest;
+                        apiResponses.IsSuccess = false;
+                        var res = JsonConvert.SerializeObject(apiResponses);
+                        var returnObj = JsonConvert.DeserializeObject<T>(res);
+                        return returnObj;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var exceptionResponse = JsonConvert.DeserializeObject<T>(apiContent);
+                    return exceptionResponse;
+                }
+                var apiRes = JsonConvert.DeserializeObject<T>(apiContent);
+                return apiRes;
             }
             catch (Exception e)
             {
                 var dto = new APIResponse
                 {
-                    ErrorMessage = new List<string> { Convert.ToString(e.Message) },
+                    ErrorMessages = new List<string> { Convert.ToString(e.Message) },
                     IsSuccess = false
                 };
                 var res = JsonConvert.SerializeObject(dto);
