@@ -11,6 +11,6 @@ namespace MyVilla_WebAPI.Repository.IRepository
     {
         bool IsUniqueUser(string userName);
         Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO);
-        Task<LocalUser> Register(RegistrationRequestDTO registrationRequestDTO);
+        Task<UserDTO> Register(RegistrationRequestDTO registrationRequestDTO);
     }
 }

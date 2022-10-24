@@ -24,6 +24,8 @@ using Newtonsoft.Json.Converters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
+using MyVilla_WebAPI.Models;
 
 namespace MyVilla_WebAPI
 {
@@ -146,6 +148,10 @@ namespace MyVilla_WebAPI
 
             //Caching enabled in 
             services.AddResponseCaching();
+
+            //Add identity
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                    .AddEntityFrameworkStores<ApplicationDbContext>();
 
             //Add auth config 
             var key = Configuration.GetValue<string>("ApiSettings:Secret");
