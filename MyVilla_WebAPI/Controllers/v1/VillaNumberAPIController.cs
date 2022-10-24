@@ -12,9 +12,11 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace MyVilla_WebAPI.Controllers
+namespace MyVilla_WebAPI.Controllers.v1
 {
-    [Route("api/VillaNumberAPI")]
+    //{version: apiVersion}
+    [Route("api/v1/VillaNumberAPI")]
+    [ApiVersion("1.0")]
     [ApiController]
     public class VillaNumberAPIController : ControllerBase
     {
@@ -34,6 +36,12 @@ namespace MyVilla_WebAPI.Controllers
             _villaNumberRepository = villaNumberRepository;
             _villaRepository = villaRepository;
             this._response = new APIResponse();
+        }
+
+        [HttpGet("GetString")]
+        public IEnumerable<string> Get()
+        {
+            return new string[] { "str1", "str2" };
         }
 
         [HttpGet]

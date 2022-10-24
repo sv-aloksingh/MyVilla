@@ -16,10 +16,11 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace MyVilla_WebAPI.Controllers
+namespace MyVilla_WebAPI.Controllers.v1
 {
-    //[Route("api/[controller]")]
-    [Route("api/VillaAPI")]  // [controller] is session and contains name of currentController can be used in place of VillaAPI
+    //[Route("api/[controller]")]  {version: apiVersion}
+    [Route("api/v1/VillaAPI")]  // [controller] is session and contains name of currentController can be used in place of VillaAPI
+    [ApiVersion("1.0")]
     [ApiController]
     public class VillaAPIController : ControllerBase
     {
