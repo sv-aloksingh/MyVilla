@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace MyVilla_WebAPI.Controllers
 {
     [ApiVersionNeutral] //{version:apiVersion}
-    [Route("api/v1/UsersAuth")]
+    [Route("api/UsersAuth")]
     [ApiController]
     public class UsersController : Controller
     {

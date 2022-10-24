@@ -144,6 +144,8 @@ namespace MyVilla_WebAPI
             Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().
                 WriteTo.File("log/villaLogs.txt", rollingInterval: RollingInterval.Day).CreateLogger();
 
+            //Caching enabled in 
+            services.AddResponseCaching();
 
             //Add auth config 
             var key = Configuration.GetValue<string>("ApiSettings:Secret");
@@ -174,22 +176,29 @@ namespace MyVilla_WebAPI
                 options.DefaultApiVersion = new ApiVersion(1, 0);
                 options.ReportApiVersions = true;
             });
-            services.AddControllers(options => options.OutputFormatters.RemoveType<StringOutputFormatter>());
+            services.AddControllers(options =>
+            {
+                options.OutputFormatters.RemoveType<StringOutputFormatter>();
+                options.CacheProfiles.Add("Default30Sec",
+                    new CacheProfile()
+                    {
+                        Duration = 30
+                    });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
+            //if (env.IsDevelopment())
+            app.UseDeveloperExceptionPage();
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
             {
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(options =>
-                {
-                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-                    options.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
-                });
-            }
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+                options.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
+                //options.RoutePrefix = String.Empty;
+            });
 
             //app.UseSwaggerUI(options =>
             //{

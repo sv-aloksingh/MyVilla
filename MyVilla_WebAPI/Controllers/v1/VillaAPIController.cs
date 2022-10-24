@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace MyVilla_WebAPI.Controllers.v1
@@ -48,18 +49,38 @@ namespace MyVilla_WebAPI.Controllers.v1
         }
 
         [HttpGet]
+        [ResponseCache(Duration = 30)]
+        //[ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+        //[ResponseCache(CacheProfileName = "Default30Sec")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<APIResponse>> GetVillas()
+        public async Task<ActionResult<APIResponse>> GetVillas([FromQuery(Name ="FilterOccupancy")]int? occupancy,
+            [FromQuery]string? search, int pageSize = 3, int pageNumber = 1)
         {
             try
             {
                 _logger.LogInformation("Getting all villas");
                 _logging.Log("Getting all villas -Alok", "error"); //log info , just used error for color check.
 
-                IEnumerable<Villa> villaList = await _villaRepository.GetAllVillaAsync();
+                //If occupancy passed then filter it, else return all.
+                IEnumerable<Villa> villaList;
+                if (occupancy > 0)
+                {
+                    villaList = await _villaRepository.GetAllVillaAsync(x => x.Occupancy == occupancy, 
+                        pageSize: pageSize, pageNumber: pageNumber);
+                }
+                else
+                {
+                    villaList = await _villaRepository.GetAllVillaAsync();
+                }
+                if (!string.IsNullOrEmpty(search))
+                {
+                    villaList = villaList.Where(x => x.Name.ToLower().Contains(search));
+                }
 
+                Pagination pagination = new Pagination() { PageNumber = pageNumber, PageSize = pageSize};
+                Response.Headers.Add("X-pagination",JsonSerializer.Serialize(pagination));
                 _response.Result = _mapper.Map<IEnumerable<VillaDTO>>(villaList);
                 _response.StatusCode = HttpStatusCode.OK;
                 return Ok(_response);
@@ -76,6 +97,7 @@ namespace MyVilla_WebAPI.Controllers.v1
         //[HttpGet("{id:int}")]
         //[ProducesResponseType(200, Type = typeof(VillaDTO))]
         [HttpGet("{id:int}", Name = "GetVilla")]
+        [ResponseCache(CacheProfileName = "Default30Sec")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -89,15 +111,21 @@ namespace MyVilla_WebAPI.Controllers.v1
                 {
                     _logger.LogError("Get Villa Error With Id" + id);
                     _logging.Log("Get Villa Error With Alok Id" + id, "error");
-                    _response.StatusCode = HttpStatusCode.NotFound;
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.IsSuccess = false;
                     return BadRequest(_response);
                 }
                 var villa = await _villaRepository.GetVillaAsync(x => x.Id == id);
                 if (villa == null)
-                    return NotFound();
+                {
+                    _response.StatusCode = HttpStatusCode.NotFound;
+                    _response.IsSuccess = false;
+                    return NotFound(_response);
+                }
 
                 _response.Result = _mapper.Map<VillaDTO>(villa);
                 _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
                 return Ok(_response);
             }
             catch (Exception ex)
